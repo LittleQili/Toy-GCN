@@ -17,7 +17,7 @@ hcount: 直接用
 charge: 非常稀疏，偶尔有个-1之类的，可以考虑不用
 isotope& class 两个装死
 
-特征扩展：主要目的是补齐空缺位置
+特征扩展：主要目的是补齐空缺位置,这个是必须的，不然会报错
 目前：feature 0扩展，维度为(4,132)
 adj 先0扩展再进行计算，维度为(132,132)
 
@@ -117,10 +117,9 @@ def proc_one_smile(smile_nx):
     global Maximum_length_smile
     tmp = int(Maximum_length_smile - feature.shape[1])
     expand_feature = np.zeros((4,tmp))
-    # print(type(feature))
-    # print(type(expand_feature))
     feature = np.concatenate((feature,expand_feature),axis = 1)
     feature = feature.transpose()
+
     # print(feature.shape)
     # print(feature)
     # print(expand_feature.shape)
@@ -181,6 +180,7 @@ def load_data():
     mol_smiles = []# debug
     adj_smiles = []#adjacent
     feature_smiles = []#feature
+    allinput = []
     tmpi = 0
     for k in dict_id_smiles:
         # print('smile',dict_id_smiles[k])
@@ -190,6 +190,8 @@ def load_data():
         tmpadj,tmpfet = proc_one_smile(psm.read_smiles(dict_id_smiles[k]))
         adj_smiles.append(tmpadj)
         feature_smiles.append(tmpfet)
+        cat = np.concatenate((tmpadj,tmpfet),axis=1)
+        allinput.append(cat)
         tmpi+=1
         if tmpi >= tmpnum_smiles:
             break
@@ -205,20 +207,26 @@ def load_data():
             break
     # print('label_list:',label_list)
 
+    # adj_smiles = np.array(adj_smiles)
+    # adj_smiles = adj_smiles.astype(float)
+    # _adj_smiles = torch.FloatTensor(adj_smiles)
     adj_smiles = torch.FloatTensor(np.array(adj_smiles))
     feature_smiles = torch.FloatTensor(np.array(feature_smiles))
+    allinput = torch.FloatTensor(np.array(allinput))
     labels = torch.LongTensor(np.array(label_list))
     print(adj_smiles.shape)
     print(feature_smiles.shape)
     print(labels.shape)
+    print(allinput.shape)
     '''
     torch.Size([8169, 132, 132])
     torch.Size([8169, 4, 132])
     torch.Size([8169])
+    torch.Size([32, 136, 132])
     '''
     print(feature_smiles.shape[2])
     print(labels.max().item() + 1)
-    return id,labels,adj_smiles,feature_smiles
+    return id,labels,adj_smiles,feature_smiles,allinput
 
-load_data()
+# load_data()
 # print(Maximum_length)

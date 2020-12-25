@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+import torch.utils as tutil
 
 from utils import accuracy
 from models import GCN
@@ -18,7 +19,7 @@ parser.add_argument('--no-cuda', action='store_true', default=False,
 parser.add_argument('--fastmode', action='store_true', default=False,
                     help='Validate during training pass.')
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=1,
+parser.add_argument('--epochs', type=int, default=2,
                     help='Number of epochs to train.')
 parser.add_argument('--lr', type=float, default=0.01,
                     help='Initial learning rate.')
@@ -38,7 +39,8 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
 # Load data
-id,labels,adj_all,feature_all = load_data()
+BATCH_SIZE = 16
+id,labels,adj_all,feature_all,data_all = load_data()
 # adj, features, labels, idx_train, idx_val, idx_test = load_data()
 # exit()
 # Model and optimizer
@@ -48,6 +50,12 @@ model = GCN(nfeat=feature_all.shape[2],
             dropout=args.dropout)
 optimizer = optim.Adam(model.parameters(),
                        lr=args.lr, weight_decay=args.weight_decay)
+
+mydatainput = tutil.data.TensorDataset(data_all,labels)
+mydataloader = tutil.data.DataLoader(
+    dataset = mydatainput,
+    batch_size = BATCH_SIZE
+    )
 
 if args.cuda:
     model.cuda()
@@ -60,28 +68,39 @@ if args.cuda:
 
 
 def train(epoch):
-    for i in range(adj_all.shape[0]):
-        t = time.time()
-        model.train()
-        optimizer.zero_grad()
+    for step ,(iinput,ilabel) in enumerate(mydataloader):
+        tmpnpinput = iinput.numpy()
+        adj = tmpnpinput[:,:,:132]
+        fea = tmpnpinput[:,:,132:]
+        # print(fea)
+        # print(adj)
+        adj = torch.FloatTensor(adj)
+        fea = torch.FloatTensor(fea)
+        
+        
 
-        output = model(feature_all[i], adj_all[i])
-        # print('in func:',output.shape)
-        loss_train = F.nll_loss(output, labels)
-        acc_train = accuracy(output, labels)
-        loss_train.backward()
-        optimizer.step()
-        if not args.fastmode:
-            model.eval()
-            output = model(feature_all[i], adj_all[i])
-        loss_val = F.nll_loss(output, labels)
-        acc_val = accuracy(output, labels)
-        print('Epoch: {:04d}'.format(epoch+1),
-              'loss_train: {:.4f}'.format(loss_train.item()),
-              'acc_train: {:.4f}'.format(acc_train.item()),
-              'loss_val: {:.4f}'.format(loss_val.item()),
-              'acc_val: {:.4f}'.format(acc_val.item()),
-              'time: {:.4f}s'.format(time.time() - t))
+    # for i in range(adj_all.shape[0]):
+    #     t = time.time()
+    #     model.train()
+    #     optimizer.zero_grad()
+
+    #     output = model(feature_all[i], adj_all[i])
+    #     # print('in func:',output.shape)
+    #     loss_train = F.nll_loss(output, labels[i])
+    #     acc_train = accuracy(output, labels[i])
+    #     loss_train.backward()
+    #     optimizer.step()
+    #     if not args.fastmode:
+    #         model.eval()
+    #         output = model(feature_all[i], adj_all[i])
+    #     loss_val = F.nll_loss(output, labels[i])
+    #     acc_val = accuracy(output, labels[i])
+    #     print('Epoch: {:04d}'.format(epoch+1),
+    #           'loss_train: {:.4f}'.format(loss_train.item()),
+    #           'acc_train: {:.4f}'.format(acc_train.item()),
+    #           'loss_val: {:.4f}'.format(loss_val.item()),
+    #           'acc_val: {:.4f}'.format(acc_val.item()),
+    #           'time: {:.4f}s'.format(time.time() - t))
     # t = time.time()
     # # 将模型转为训练模式，并将优化器梯度置零
     # # optimizer.zero_grad()意思是把梯度置零，也就是把loss关于weight的导数变成0.
