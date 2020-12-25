@@ -37,7 +37,8 @@ class GraphConvolution(Module):
         # 矩阵相乘，矩阵
         support = torch.mm(input, self.weight)
         # 矩阵点积
-        output = torch.spmm(adj, support)
+        output = torch.mm(adj, support)
+        # print('in-layers:',output.shape)
         if self.bias is not None:
             return output + self.bias
         else:

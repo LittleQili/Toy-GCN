@@ -8,6 +8,7 @@ import torch
 data
 化学式数目：8169
 化学式最长长度(element个数)：132
+特征矩阵维度：4
 
 特征：
 element: need a static dict to stand for each element
@@ -54,6 +55,7 @@ dict_element = {'C': 1, 'N': 2, 'O': 3, 'Br': 4, 'Cl': 5, 'Na': 6, 'S': 7, 'P': 
 # from test
 Maximum_length_smile = 132
 # Maximum_length = 0
+tmpnum_smiles = 32
 
 def fread_smiles(path):
     with open(path, 'r') as f:
@@ -118,7 +120,7 @@ def proc_one_smile(smile_nx):
     # print(type(feature))
     # print(type(expand_feature))
     feature = np.concatenate((feature,expand_feature),axis = 1)
-    
+    feature = feature.transpose()
     # print(feature.shape)
     # print(feature)
     # print(expand_feature.shape)
@@ -140,10 +142,7 @@ def proc_one_smile(smile_nx):
 
     adj = nx.to_numpy_matrix(smile_nx,weight='order')
     # print(adj.shape)
-    expand_feature = np.zeros((adj.shape[0],Maximum_length_smile-adj.shape[1]))
-    adj = np.concatenate((adj,expand_feature),axis = 1)
-    expand_feature = np.zeros((Maximum_length_smile-adj.shape[0],adj.shape[1]))
-    adj = np.concatenate((adj,expand_feature),axis = 0)
+    
     # print(adj.shape)
     # print(adj)
     # print('adj:',type(adj),'\n',adj)
@@ -157,9 +156,15 @@ def proc_one_smile(smile_nx):
     # print('row_sum:',type(row_sum),'\n',row_sum)
     row_sum[np.isinf(row_sum)] = 0
     # print('row_sum:',type(row_sum),'\n',row_sum)
-    adj_h = np.dot(row_sum, adj)
+    adj = np.dot(row_sum, adj)
     # print('adj_h:',type(adj_h),'\n',adj_h)
-    return adj_h, feature
+
+    expand_feature = np.zeros((adj.shape[0],Maximum_length_smile-adj.shape[1]))
+    adj = np.concatenate((adj,expand_feature),axis = 1)
+    expand_feature = np.zeros((Maximum_length_smile-adj.shape[0],adj.shape[1]))
+    adj = np.concatenate((adj,expand_feature),axis = 0)
+
+    return adj, feature
     
 
 def load_data():
@@ -176,6 +181,7 @@ def load_data():
     mol_smiles = []# debug
     adj_smiles = []#adjacent
     feature_smiles = []#feature
+    tmpi = 0
     for k in dict_id_smiles:
         # print('smile',dict_id_smiles[k])
         smiles.append(dict_id_smiles[k])
@@ -184,22 +190,35 @@ def load_data():
         tmpadj,tmpfet = proc_one_smile(psm.read_smiles(dict_id_smiles[k]))
         adj_smiles.append(tmpadj)
         feature_smiles.append(tmpfet)
+        tmpi+=1
+        if tmpi >= tmpnum_smiles:
+            break
         # break
-    adj_smiles = np.array(adj_smiles)
-    feature_smiles = np.array(feature_smiles)
+    
     dict_id_label = fread_labels(ffolder_train+fname_label)
     label_list = []
+    tmpi = 0
     for k in dict_id_label:
         label_list.append(dict_id_label[k])
+        tmpi+=1
+        if tmpi >= tmpnum_smiles:
+            break
     # print('label_list:',label_list)
-    
+
+    adj_smiles = torch.FloatTensor(np.array(adj_smiles))
+    feature_smiles = torch.FloatTensor(np.array(feature_smiles))
+    labels = torch.LongTensor(np.array(label_list))
     print(adj_smiles.shape)
     print(feature_smiles.shape)
+    print(labels.shape)
     '''
-    (8169, 132, 132)
-    (8169, 4, 132)
+    torch.Size([8169, 132, 132])
+    torch.Size([8169, 4, 132])
+    torch.Size([8169])
     '''
-    return id,label_list,adj_smiles,feature_smiles
+    print(feature_smiles.shape[2])
+    print(labels.max().item() + 1)
+    return id,labels,adj_smiles,feature_smiles
 
 load_data()
 # print(Maximum_length)

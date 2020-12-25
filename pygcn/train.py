@@ -40,6 +40,16 @@ if args.cuda:
 
 # Load data
 adj, features, labels, idx_train, idx_val, idx_test = load_data()
+'''
+原先的数据形状：
+adj: <class 'torch.Tensor'> torch.Size([2708, 2708])
+features: <class 'torch.Tensor'> torch.Size([2708, 1433])
+labels: <class 'torch.Tensor'> torch.Size([2708])
+idx_train: <class 'torch.Tensor'> torch.Size([140])
+idx_val: <class 'torch.Tensor'> torch.Size([300])
+idx_test: <class 'torch.Tensor'> torch.Size([1000])
+需要对网络结构进行调整，建议谨慎。
+'''
 exit()
 # Model and optimizer
 model = GCN(nfeat=features.shape[1],
