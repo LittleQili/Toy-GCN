@@ -55,7 +55,7 @@ dict_element = {'C': 1, 'N': 2, 'O': 3, 'Br': 4, 'Cl': 5, 'Na': 6, 'S': 7, 'P': 
 # from test
 Maximum_length_smile = 132
 # Maximum_length = 0
-tmpnum_smiles = 32
+tmpnum_smiles = 10000
 
 def fread_smiles(path):
     with open(path, 'r') as f:
@@ -205,15 +205,11 @@ def load_data():
         tmpi+=1
         if tmpi >= tmpnum_smiles:
             break
-    # print('label_list:',label_list)
-
-    # adj_smiles = np.array(adj_smiles)
-    # adj_smiles = adj_smiles.astype(float)
-    # _adj_smiles = torch.FloatTensor(adj_smiles)
+    label_list = np.array(label_list)
     adj_smiles = torch.FloatTensor(np.array(adj_smiles))
     feature_smiles = torch.FloatTensor(np.array(feature_smiles))
     allinput = torch.FloatTensor(np.array(allinput))
-    labels = torch.LongTensor(np.array(label_list))
+    labels = torch.FloatTensor(np.expand_dims(label_list,1))
     print(adj_smiles.shape)
     print(feature_smiles.shape)
     print(labels.shape)
@@ -228,10 +224,63 @@ def load_data():
     print(labels.max().item() + 1)
     return id,labels,adj_smiles,feature_smiles,allinput
 
-load_data()
-# print(Maximum_length)
-def accuracy(output, labels):
-    preds = output.max(1)[1].type_as(labels)
-    correct = preds.eq(labels).double()
-    correct = correct.sum()
-    return correct / len(labels)
+# load_data()
+'''
+test data: 610条
+'''
+
+def load_test_data():
+    ffolder_train = "../data/test/"
+
+    fname_smiles = "names_smiles.txt"
+    fname_onehot = "names_onehots.npy"
+    # fname_label = "names_labels.txt"
+
+    dict_id_smiles = fread_smiles(ffolder_train+fname_smiles)
+    # print(dict_id_smiles)
+    smiles = []# smile string, for debug
+    id = []# chemical id
+    mol_smiles = []# debug
+    adj_smiles = []#adjacent
+    feature_smiles = []#feature
+    allinput = []
+    tmpi = 0
+    for k in dict_id_smiles:
+        # print('smile',dict_id_smiles[k])
+        smiles.append(dict_id_smiles[k])
+        id.append(k)
+        mol_smiles.append(psm.read_smiles(dict_id_smiles[k]))
+        tmpadj,tmpfet = proc_one_smile(psm.read_smiles(dict_id_smiles[k]))
+        adj_smiles.append(tmpadj)
+        feature_smiles.append(tmpfet)
+        cat = np.concatenate((tmpadj,tmpfet),axis=1)
+        allinput.append(cat)
+        tmpi+=1
+        if tmpi >= tmpnum_smiles:
+            break
+        # break
+    
+    adj_smiles = torch.FloatTensor(np.array(adj_smiles))
+    feature_smiles = torch.FloatTensor(np.array(feature_smiles))
+    allinput = torch.FloatTensor(np.array(allinput))
+    print(adj_smiles.shape)
+    print(feature_smiles.shape)
+    print(allinput.shape)
+    '''
+    torch.Size([8169, 132, 132])
+    torch.Size([8169, 4, 132])
+    torch.Size([8169])
+    torch.Size([32, 136, 132])
+    '''
+    print(feature_smiles.shape[2])
+    return id,adj_smiles,feature_smiles,allinput
+
+# load_test_data()
+
+def accu(output,l):
+    finalact = torch.nn.Sigmoid()
+    v = finalact(output)[0].item()
+    if l == 1:
+        return l-v
+    else:
+        return v
