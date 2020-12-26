@@ -169,9 +169,9 @@ def proc_one_smile(smile_nx):
 def load_data():
     ffolder_train = "../data/train/"
 
-    fname_smiles = "names_smiles.txt"
+    fname_smiles = "smiles.txt"
     fname_onehot = "names_onehots.npy"
-    fname_label = "names_labels.txt"
+    fname_label = "labels.txt"
 
     dict_id_smiles = fread_smiles(ffolder_train+fname_smiles)
     # print(dict_id_smiles)

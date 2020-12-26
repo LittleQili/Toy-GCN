@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils as tutil
 
-from utils import accuracy
+# from utils import accuracy
 from smmodel import GCN
 from smdata import load_test_data
 
@@ -27,7 +27,8 @@ if args.cuda:
 
 id,adj_smiles,feature_smiles,allinput = load_test_data()
 
-model = torch.load('weight/yijiaGCN.pt')
+model = torch.load('weight/yijiaGCN6.pt')
+model
 
 if args.cuda:
     # model.cuda()
@@ -36,13 +37,10 @@ if args.cuda:
 
 finalact = torch.nn.Sigmoid()
 
-f = open('output_518030910146.txt','w')
+f = open('output_518030910146_6.txt','w')
 f.write('Chemical,Label\n')
+output = finalact(model(adj_smiles,feature_smiles))
 for i in range(adj_smiles.shape[0]):
-    output = model(adj_smiles[i],feature_smiles[i])
-    output = finalact(output)[0].item()
-    f.write(id[i] + ',%f\n' % output)
+    tmpf = output[i].item()
+    f.write(id[i] + ',%f\n' % tmpf)
 f.close()
-# print(output)
-# print(output[0].item())
-# print(id)
