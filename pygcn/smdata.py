@@ -228,5 +228,10 @@ def load_data():
     print(labels.max().item() + 1)
     return id,labels,adj_smiles,feature_smiles,allinput
 
-# load_data()
+load_data()
 # print(Maximum_length)
+def accuracy(output, labels):
+    preds = output.max(1)[1].type_as(labels)
+    correct = preds.eq(labels).double()
+    correct = correct.sum()
+    return correct / len(labels)
