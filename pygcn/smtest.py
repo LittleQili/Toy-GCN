@@ -27,17 +27,17 @@ if args.cuda:
 
 id,adj_smiles,feature_smiles,allinput = load_test_data()
 
-model = torch.load('weight/yijiaGCN6.pt')
-model
+model = torch.load('weight/yijiaGCN1.pt')
+model.eval()
 
 if args.cuda:
-    # model.cuda()
+    model.cuda()
     feature_smiles = feature_smiles.cuda()
     adj_smiles = adj_smiles.cuda()
 
 finalact = torch.nn.Sigmoid()
 
-f = open('output_518030910146_6.txt','w')
+f = open('output_518030910146_1.txt','w')
 f.write('Chemical,Label\n')
 output = finalact(model(adj_smiles,feature_smiles))
 for i in range(adj_smiles.shape[0]):

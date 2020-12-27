@@ -38,7 +38,7 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
 # Load data
-BATCH_SIZE = 256
+BATCH_SIZE = 8
 id,labels,adj_all,feature_all,data_all = load_data()
 output_batch = torch.FloatTensor(BATCH_SIZE,1)
 # print(output_batch.shape)
@@ -72,6 +72,7 @@ if args.cuda:
 
 def train(epoch):
     t = time.time()
+    loss_val = 0
     for i in range(0,adj_all.shape[0],BATCH_SIZE):
         optimizer.zero_grad()
         output = model(adj_all[i:i+BATCH_SIZE],feature_all[i:i+BATCH_SIZE])
@@ -80,12 +81,16 @@ def train(epoch):
         loss_train = mylossFunc(output,labels[i:i+BATCH_SIZE])
         loss_train.backward()
         optimizer.step()
-        print('Epoch: {:04d}'.format(epoch+1),
-            'loss_train: {:.4f}'.format(loss_train.item()),
+
+        loss_val += loss_train.item()
+        if i % 256 == 0:
+            print('Epoch: {:04d}'.format(epoch+1),
+            # 'loss_train: {:.4f}'.format(loss_train.item()),
             # 'acc_val: ',(acc/256),
-            # 'loss_val: {:.4f}'.format(loss_val.item()/256),
+            'loss_val: {:.4f}'.format(loss_val*BATCH_SIZE/256),
             # 'acc_val: ',(acc/256),
             'time: {:.4f}s'.format(time.time() - t))
+            loss_val = 0
 
     # loss_val = 0
     # acc = 0
@@ -202,26 +207,14 @@ def train(epoch):
     
 
 
-# def test():
-#     model.eval()
-#     output = model(features, adj)
-#     loss_test = F.nll_loss(output[idx_test], labels[idx_test])
-#     acc_test = accuracy(output[idx_test], labels[idx_test])
-#     print("Test set results:",
-#           "loss= {:.4f}".format(loss_test.item()),
-#           "accuracy= {:.4f}".format(acc_test.item()))
-
-
 # Train model
 t_total = time.time()
 model.train()
 m_name = 'weight/yijiaGCN'
 for epoch in range(args.epochs):
     train(epoch)
-    if epoch % 2 == 0:
+    if epoch % 1 == 0:
         torch.save(model,m_name+str(epoch)+'.pt')
 print("Optimization Finished!")
 print("Total time elapsed: {:.4f}s".format(time.time() - t_total))
 torch.save(model,'weight/yijiaGCN.pt')
-# Testing
-# test()
