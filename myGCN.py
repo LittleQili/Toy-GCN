@@ -36,9 +36,9 @@ class GraphConvolution(Module):
     # 为啥nm的是稀疏矩阵相乘？
     def forward(self, adj, fea):
         # 矩阵相乘，矩阵
-        support = torch.matmul(fea, self.weight)
+        support = torch.mm(fea, self.weight)
         # 矩阵点积
-        output = torch.matmul(adj, support)
+        output = torch.mm(adj, support)
         # print('in-layers:',output.shape)
         if self.bias is not None:
             return output + self.bias
@@ -92,24 +92,16 @@ class GCN(nn.Module):
     def __init__(self,norder, nfeat, nhid, nclass, dropout):
         super(GCN, self).__init__()
 
-        self.dropout = dropout
-        self.nhid = nhid
-        self.nclass = nclass
-        
         self.gc1 = GraphConvolution(norder, nfeat, nhid)
         self.gc2 = GraphConvolution(nhid, nfeat, nclass)
         self.fcn = MyFCN(nclass,nhid)
-        self.FCN = nn.Linear(in_features = nclass*nhid,out_features = 1,bias = True)
+        self.dropout = dropout
 
     def forward(self, adj, fea):
         x = F.relu(self.gc1(adj,fea))
         x = F.dropout(x, self.dropout, training=self.training)
-        x = torch.transpose(x,1,2)
-        x = F.relu(self.gc2(x, fea))
-        x = x.reshape([-1,self.nhid*self.nclass])
-        x = self.FCN(x)
-        # x = torch.transpose(x,1,2)
-        # x = self.fcn(x)
+        x = x.t()
+        x = F.relu(self.gc2(x, fea))# ???
+        x = x.t()
+        x = self.fcn(x)
         return x
-        # x = 
-        # return F.log_softmax(x, dim=1)

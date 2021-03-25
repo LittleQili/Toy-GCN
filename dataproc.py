@@ -9,22 +9,18 @@ data
 化学式数目：8169
 化学式最长长度(element个数)：132
 特征矩阵维度：4
-
 特征：
 element: need a static dict to stand for each element
 aromatic: 直接用
 hcount: 直接用
 charge: 非常稀疏，偶尔有个-1之类的，可以考虑不用
 isotope& class 两个装死
-
 特征扩展：主要目的是补齐空缺位置,这个是必须的，不然会报错
 目前：feature 0扩展，维度为(4,132)
 adj 先0扩展再进行计算，维度为(132,132)
-
 方案1：adj矩阵扩展为0，feature矩阵也扩展为0
 方案2：读一读adj来源图，考虑一下扩展成-1？之类的，或者对角线-1？
       feature矩阵考虑扩展成-1？但是需要注意charge的-1,扩展可能不太一样
-
 smile CC=CCC#N
 element:  [(0, 'C'), (1, 'C'), (2, 'C'), (3, 'C'), (4, 'C'), (5, 'N')]
 aromatic:   [(0, False), (1, False), (2, False), (3, False), (4, False), (5, False)]
@@ -169,9 +165,9 @@ def proc_one_smile(smile_nx):
 def load_data():
     ffolder_train = "../data/train/"
 
-    fname_smiles = "smiles.txt"
+    fname_smiles = "names_smiles.txt"
     fname_onehot = "names_onehots.npy"
-    fname_label = "labels.txt"
+    fname_label = "names_labels.txt"
 
     dict_id_smiles = fread_smiles(ffolder_train+fname_smiles)
     # print(dict_id_smiles)
@@ -266,12 +262,7 @@ def load_test_data():
     print(adj_smiles.shape)
     print(feature_smiles.shape)
     print(allinput.shape)
-    '''
-    torch.Size([8169, 132, 132])
-    torch.Size([8169, 4, 132])
-    torch.Size([8169])
-    torch.Size([32, 136, 132])
-    '''
+    
     print(feature_smiles.shape[2])
     return id,adj_smiles,feature_smiles,allinput
 
